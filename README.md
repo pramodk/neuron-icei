@@ -49,8 +49,20 @@ This will build neuron/coreneuron simulation toolchain with following models:
 		[CoreNEURON] Running with 8 took :  1.50669 seconds
     ```
 
-
 - To run via modules installed using Spack:
+	Following modules are generated as part of build:
+
+	```
+	→ docker run -u kumbhar -it neuron-icei bash
+	$ module av
+
+		------------ /home/kumbhar/modules/spack/share/spack/modules/linux-ubuntu18.04-x86_64 ------------
+		mvapich2/2.3                  neuronmodels/coretest         neuronmodels/ring-profile     tau/2.27.1
+		neuron/develop                neuronmodels/coretest-profile neuronmodels/traub
+		neuron/develop-profile        neuronmodels/ring             neuronmodels/traub-profile
+	```
+
+	You can run the tests as:
 
 	```
 	→ docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/modules/run && bash ring.sh'
