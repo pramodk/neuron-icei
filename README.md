@@ -1,86 +1,82 @@
-### Spack Based Docker Image for NEURON Simulations
+### Docker Image With NEURON models [installer + benchmark scripts]
 
 
 - Clone repository
 
     ```
-    https://github.com/pramodk/neuron-icei.git
+    git clone https://github.com/pramodk/neuron-icei.git
     cd neuron-icei
     ```
 
 - Build image
 
     ```
-    docker build --build-arg username=kumbhar --build-arg password=kumbhar123  -t neuron-icei .
-    ```
-This will build neuron based simulation toolchain and prepare test simulation.
-
-
-- To run a simulation within a container:
-
-    ```
-    docker run -i -t cellular:latest /bin/bash
-    cd sim/build/circuitBuilding_1000neurons/
-    module load neurodamus/master
-    mpiexec -n 6 --allow-run-as-root special $HOC_LIBRARY_PATH/init.hoc -mpi
-    ```
-- To run a simulation by launching a container:
-
-    ```
-    docker run -i -t cellular:latest /bin/bash -c 'cd $HOME/sim/build/circuitBuilding_1000neurons && . $SPACK_ROOT/share/spack/setup-env.sh && module load neurodamus/master && mpiexec -n 6 --allow-run-as-root special $HOC_LIBRARY_PATH/init.hoc -mpi'
+    → docker build --build-arg username=kumbhar --build-arg password=kumbhar123  -t neuron-icei .
     ```
 
-- To run on multiple docker containers:
-	- Update `docker-compose.yml` specification with appropriate number of compute nodes (`scale` parameter in `node` service)
-	- Launch containers with `docker-compose`
-	- Run simulation on the running containers
+This will build neuron/coreneuron simulation toolchain with following models:
+	- Ring network of branching cells
+	- A single column thalamocortical network model
 
-	    ```
-	    # start cluster
-	    $ docker-compose up -d
 
-	    # check cluster running
-	    $ docker ps
-		CONTAINER ID        IMAGE               COMMAND               CREATED             STATUS              PORTS                   NAMES
-		0b2b5386ce12        cellular:latest     "/usr/sbin/sshd -D"   8 minutes ago       Up 3 minutes        0.0.0.0:32770->22/tcp   neurondockerspack_login_1
-		1643c10a96af        cellular:latest     "/usr/sbin/sshd -D"   8 minutes ago       Up 3 minutes        22/tcp                  neurondockerspack_node_1
-		7ac4b751c574        cellular:latest     "/usr/sbin/sshd -D"   8 minutes ago       Up 3 minutes        22/tcp                  neurondockerspack_node_3
-		60ec8d0e7052        cellular:latest     "/usr/sbin/sshd -D"   8 minutes ago       Up 3 minutes        22/tcp                  neurondockerspack_node_2
+- To run small test within a container:
 
-		# make sure nodes are connected (username used inside container)
-		$ USERNAME=kumbhar
-		$ docker-compose exec --user $USERNAME --privileged login /bin/bash -c 'mpiexec -n 6  --host node_1:2,node_2:2,node_3:2 $HOME/test/hello'
-		Hello world from processor 1643c10a96af, rank 0 out of 6 processors
-		Hello world from processor 1643c10a96af, rank 1 out of 6 processors
-		Hello world from processor 60ec8d0e7052, rank 2 out of 6 processors
-		Hello world from processor 60ec8d0e7052, rank 3 out of 6 processors
-		Hello world from processor 7ac4b751c574, rank 4 out of 6 processors
-		Hello world from processor 7ac4b751c574, rank 5 out of 6 processors
+	 For ring test
 
-		# run simulation using multiple containers
-		$ docker-compose exec --user $USERNAME --privileged login /bin/bash -c 'cd $HOME/sim/build/circuitBuilding_1000neurons && . $SPACK_ROOT/share/spack/setup-env.sh && module load neurodamus/master && mpiexec -x HOC_LIBRARY_PATH -n 6 --host node_1:2,node_2:2,node_3:2 `which special` ${HOC_LIBRARY_PATH}/init.hoc -mpi'
-		....
-		numprocs=6
-		NEURON -- VERSION + master (9f36b13+) 2018-08-28
-		Duke, Yale, and the BlueBrain Project -- Copyright 1984-2018
-		See http://neuron.yale.edu/neuron/credits
-		Additional mechanisms from files
-		....
-		create file ./out.dat
-					  Event Label  Node  MinTime  Node  MaxTime
-		accum                    Synapse init     4     0.00     5     0.04
-		accum                       file read     0     0.00     0     0.00
-		accum                     Replay init     0     0.00     0     0.00
-		accum                         stdinit     2     0.13     4     0.18
-		accum                          psolve     4     9.79     3     9.82
-		 memusage node 0 according to nrn_mallinfo:
-			 59.289062MB
+    ```
+    → docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/manual/run && bash ring.sh'
+		[NEURON] Running with 1 took :  1.230000 seconds
+		[NEURON] Running with 2 took :  0.650000 seconds
+		[NEURON] Running with 4 took :  0.330000 seconds
+		[NEURON] Running with 8 took :  0.180000 seconds
+		[CoreNEURON] Running with 1 took :  1.08796 seconds
+		[CoreNEURON] Running with 2 took :  0.616106 seconds
+		[CoreNEURON] Running with 4 took :  0.311387 seconds
+		[CoreNEURON] Running with 8 took :  0.158982 seconds
+    ```
 
-		# remove containers
-		$ docker-compose stop && docker-compose down
-	    ```
+    For traub test
 
-- Notes :
-    * Do not push the image
-    * Remove ssh key from server once the image is built
-    * Todo : need to squash all layes
+    ```
+    → docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/manual/run && bash traub.sh'
+		[NEURON] Running with 1 took :  8.780000 seconds
+		[NEURON] Running with 2 took :  4.950000 seconds
+		[NEURON] Running with 4 took :  2.790000 seconds
+		[NEURON] Running with 8 took :  1.860000 seconds
+		[CoreNEURON] Running with 1 took :  7.57756 seconds
+		[CoreNEURON] Running with 2 took :  3.84595 seconds
+		[CoreNEURON] Running with 4 took :  2.26981 seconds
+		[CoreNEURON] Running with 8 took :  1.50669 seconds
+    ```
+
+
+- To run via modules installed using Spack:
+
+	```
+	→ docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/modules/run && bash ring.sh'
+	→ docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/modules/run && bash traub.sh'
+	```
+
+- To run TAU instrumented versions and generate profile, do:
+
+	```
+	→ docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/modules/run && bash ring.sh -profile'
+	→ docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/modules/run && bash traub.sh -profile'
+	```
+
+	The tau profiles will be genrated inside `$HOME/modules/run`. For example,
+
+	```
+	→ docker run -i -t neuron-icei:latest bash
+	→ cd $HOME/modules/run
+	→ bash ring.sh -profile
+	→ ls ring/*.xml
+		ring/tau.cnrn.1.xml  ring/tau.cnrn.4.xml  ring/tau.nrn.1.xml  ring/tau.nrn.4.xml
+		ring/tau.cnrn.2.xml  ring/tau.cnrn.8.xml  ring/tau.nrn.2.xml  ring/tau.nrn.8.xml
+	```
+
+- Todos:
+	-  	Add information about optimized builds [e.g. Intel/Cray/PGI compiler is required for vectorisation of CoreNEURON kernels)
+	-  Add information about model parameters for production run
+	-  Add information about validation of results
+	-  Add information about PGI+OpenACC build of CoreNEURON (add current constraints / WIP)
