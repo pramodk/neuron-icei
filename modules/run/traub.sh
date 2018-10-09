@@ -12,6 +12,7 @@ module load neuronmodels/traub$1
 
 # profile format
 export TAU_PROFILE_FORMAT=merged
+export OMP_NUM_THREADS=1
 
 mkdir -p traub && cd traub
 
@@ -23,7 +24,7 @@ for nproc in 1 2 4 8; do
     sortspike out$nproc.dat out.dat.nrn.$nproc
     [[ -f $tau_file ]] && mv $tau_file tau.nrn.$nproc.xml
     sol_time=$(grep Solver nrn.$nproc.log | sed 's/Solver Time ://')
-    echo "[NEURON] Running with $nproc took : $sol_time seconds"
+    echo "[NEURON] Running with $nproc rank took : $sol_time seconds"
 done
 
 # Running with CoreNEURON
@@ -32,5 +33,5 @@ for nproc in 1 2 4 8; do
     sortspike out.dat out.dat.cnrn.$nproc
     [[ -f $tau_file ]] && mv $tau_file tau.cnrn.$nproc.xml
     sol_time=$(grep Solver cnrn.$nproc.log | sed 's/Solver Time ://')
-    echo "[CoreNEURON] Running with $nproc took : $sol_time seconds"
+    echo "[CoreNEURON] Running with $nproc rank took : $sol_time seconds"
 done
