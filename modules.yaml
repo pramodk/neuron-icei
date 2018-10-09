@@ -30,8 +30,9 @@ modules:
     hash_length: 0
     whitelist:
       - neuron
-      - coreneuron
       - neuronmodels
+      - mvapich2
+      - tau
     blacklist:
       - '%gcc'
       - '%clang'

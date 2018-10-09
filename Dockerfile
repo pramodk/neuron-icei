@@ -2,6 +2,7 @@ FROM ubuntu:18.04
 MAINTAINER Pramod Kumbhar <pramod.s.kumbhar@gmail.com>
 ENV DEBIAN_FRONTEND noninteractive
 
+
 # default software required
 RUN apt-get update \
     && apt-get -y install software-properties-common \
@@ -29,20 +30,26 @@ RUN apt-get update \
     python2.7-dev \
     libncurses-dev \
     openssh-server \
-    libopenmpi-dev \
     libhdf5-serial-dev \
+    numactl \
     python-minimal \
     libtool \
+    libpciaccess-dev \
+    libxml2-dev \
     tcl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # default arguments
 ARG username=kumbhar
 ARG password=kumbhar123
+ARG git_name="Pramod Kumbhar"
+ARG git_email="pramod.s.kumbhar@gmail.com"
 
 # username password
 ENV USERNAME $username
 ENV PASSWORD $password
+ENV GIT_NAME $git_name
+ENV GIT_EMAIL $git_email
 
 # user setup (ssh login fix, otherwise user is kicked off after login)
 RUN mkdir /var/run/sshd \
@@ -68,13 +75,17 @@ USER $USERNAME
 
 # create directories
 ENV HOME /home/$USERNAME
-ENV SOFTDIR $HOME/softs
-RUN mkdir -p $SOFTDIR
-WORKDIR $SOFTDIR
+ENV MODULES_DIR $HOME/modules
+RUN mkdir -p $MODULES_DIR
+WORKDIR $MODULES_DIR
+
+# git config
+RUN git config --global user.email "${GIT_EMAIL}"
+RUN git config --global user.name "${GIT_NAME}"
 
 # clone spack
 RUN git clone https://github.com/BlueBrain/spack.git -b icei-2018-10
-ENV SPACK_ROOT $SOFTDIR/spack
+ENV SPACK_ROOT $MODULES_DIR/spack
 ENV PATH $SPACK_ROOT/bin:$PATH
 
 # setup spack variables
@@ -89,8 +100,7 @@ RUN sudo rm /bin/sh && sudo ln -s /bin/bash /bin/sh
 RUN . $SPACK_ROOT/share/spack/setup-env.sh
 
 # check compilers
-RUN spack compiler find
-RUN spack compilers
+RUN spack compiler find && spack compilers
 
 # copy spack config
 RUN mkdir -p $HOME/.spack/linux
@@ -110,27 +120,31 @@ RUN sudo chown -R $USERNAME $HOME/.ssh
 RUN ssh-keyscan github.com >> $HOME/.ssh/known_hosts
 
 # register external packages
-RUN spack install autoconf automake bison cmake flex libtool ncurses openmpi pkg-config python
+RUN spack install autoconf automake bison cmake flex libtool ncurses pkg-config python
 
 # install neuron models
-RUN spack spec -I -l neuron neuronmodels@ring
+RUN spack install mvapich2
+RUN spack install tau~openmp
 RUN spack install neuron
-RUN spack install tau
-RUN spack install -n neuronmodels@ring
-RUN spack spec neuronmodels@ring ^coreneuron+profile
-RUN spack install -n neuronmodels@ring ^coreneuron+profile
+RUN spack install -n neuronmodels@ring neuronmodels@traub neuronmodels@coretest
+RUN spack install -n neuronmodels@ring+profile^coreneuron+profile \
+                     neuronmodels@traub+profile^coreneuron+profile \
+                     neuronmodels@coretest+profile^coreneuron+profile
 
-# check available modules
+# installed packages
 RUN spack find
-
-# add test example
-ADD test/hello.c $HOME/test/hello.c
-RUN sudo chown -R $USERNAME $HOME/test
-RUN mpicc $HOME/test/hello.c -o $HOME/test/hello
 
 # start in $HOME
 WORKDIR $HOME
 
+# copy install/benchmark script and install packages
+ADD manual $HOME/manual
+RUN sudo chown -R $USERNAME $HOME/manual
+RUN cd $HOME/manual && bash -i installer.sh
+
+# copy modules benchmark script
+ADD modules $HOME/modules
+RUN sudo chown -R $USERNAME $HOME/modules
+
 # start as root
-USER root
 CMD ["/usr/sbin/sshd", "-D"]
