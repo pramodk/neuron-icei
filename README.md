@@ -49,6 +49,16 @@ This will build neuron/coreneuron simulation toolchain with following models:
 		[CoreNEURON] Running with 8 took :  1.50669 seconds
     ```
 
+    For olfactory bulb test:
+
+    ```
+    → docker run -i -t neuron-icei:latest /bin/bash -i -c 'cd $HOME/manual/run && bash olfactory-bulb.sh'
+        [NEURON] Running with 1 rank took :  13.950000 seconds
+        [NEURON] Running with 2 rank took :  6.910000 seconds
+        [NEURON] Running with 4 rank took :  3.660000 seconds
+        [NEURON] Running with 8 rank took :  2.080000 seconds
+    ```
+
 - To run via modules installed using Spack:
 	Following modules are generated as part of build:
 
