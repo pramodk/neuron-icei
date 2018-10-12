@@ -14,7 +14,7 @@ NEURON_FLAGS="-O2 -g"
 CORENEURON_FLAGS="-O2 -g"
 arch=x86_64
 
-package_names=(neuron ring traub)
+package_names=(neuron ring traub olfactory-bulb)
 
 #DIRECTORY UNDER WHICH ALL SOFTWARES WILL BE DOWNLOADED AND INSTALLED
 export BASE_DIR=`pwd`/$softdir
@@ -83,5 +83,15 @@ do
             cd ..
             $INSTALL_DIR/neuron/$arch/bin/nrnivmodl mod
             ;;
+
+        olfactory-bulb)
+            cd $SOURCE_DIR
+            if [ ! -d "olfactory-bulb" ]; then
+                git clone https://github.com/pramodk/olfactory-bulb.git olfactory-bulb
+            fi
+            cd olfactory-bulb/sim
+            $INSTALL_DIR/neuron/$arch/bin/nrnivmodl mod
+            ;;
+
     esac
 done
